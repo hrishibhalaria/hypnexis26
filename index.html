@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HYPNEXIS '26 — 36-Hour Offline Hackathon</title>
+  <meta name="description" content="HYPNEXIS '26 — 36-hour offline hackathon. ₹6,00,000+ prize pool. Innovate. Collaborate. Elevate." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>⚡</text></svg>" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syncopate:wght@400;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: {
+      grotesk: ['"Space Grotesk"','sans-serif'],
+      syncopate: ['"Syncopate"','sans-serif'],
+    }}}};
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    html,body{overflow:hidden;height:100%;width:100%;margin:0;padding:0}
+
+    /* Layer 1: Core Radial Gradient */
+    body {
+      background: radial-gradient(circle at center, #1e3a8a 0%, #0a0f1d 100%);
+    }
+
+    /* Layer 2: Volumetric Light Leaks (Nebula) */
+    .nebula-1 {
+      position: absolute;
+      top: -10%;
+      left: -10%;
+      width: 75vw;
+      height: 75vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.14) 0%, rgba(99,102,241,0) 70%);
+      filter: blur(100px);
+      mix-blend-mode: screen;
+      animation: morph-1 45s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    .nebula-2 {
+      position: absolute;
+      bottom: -10%;
+      right: -10%;
+      width: 65vw;
+      height: 65vw;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.09) 0%, rgba(6,182,212,0) 70%);
+      filter: blur(90px);
+      mix-blend-mode: screen;
+      animation: morph-2 35s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes morph-1 {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(12%, 8%) scale(1.15); }
+      100% { transform: translate(-8%, 15%) scale(0.95); }
+    }
+    @keyframes morph-2 {
+      0% { transform: translate(0, 0) scale(1.05); }
+      50% { transform: translate(-10%, -12%) scale(0.85); }
+      100% { transform: translate(8%, -4%) scale(1.1); }
+    }
+
+    /* Layer 3: Interactive Spotlight */
+    .spotlight {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(circle 55vw at var(--mx, 50%) var(--my, 50%), rgba(29, 78, 216, 0.22) 0%, rgba(30, 58, 138, 0.04) 60%, transparent 100%);
+      mix-blend-mode: screen;
+    }
+
+    /* Layer 4: Cinematic Texture Overlay (microscopic noise + CRT scanlines) */
+    .texture-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99; /* over entire canvas */
+      pointer-events: none;
+      opacity: 0.04;
+      mix-blend-mode: overlay;
+      background-image: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.75), rgba(255,255,255,0.75) 1px, transparent 1px, transparent 3px);
+    }
+
+    .glow-s{text-shadow:0 0 30px rgba(59,130,246,.25),0 0 70px rgba(59,130,246,.08)}
+    .glow-m{text-shadow:0 0 45px rgba(59,130,246,.35),0 0 90px rgba(59,130,246,.12)}
+    .glow-h{text-shadow:0 0 60px rgba(59,130,246,.50),0 0 140px rgba(59,130,246,.18),0 0 200px rgba(59,130,246,.06)}
+
+    #tunnel{position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;opacity:0}
+    .vig{background:radial-gradient(circle at center,transparent 30%,rgba(5,10,20,.65) 70%,#050a14 100%)}
+    .tcore{background:radial-gradient(circle at center,rgba(59,130,246,.03) 0%,transparent 45%)}
+
+    /* Volumetric God Rays */
+    .god-rays {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 60%;
+      z-index: 2;
+      pointer-events: none;
+      background: 
+        repeating-linear-gradient(90deg, transparent, transparent 7%, rgba(30, 58, 138, 0.05) 11%, rgba(30, 58, 138, 0.1) 14%, rgba(30, 58, 138, 0.05) 17%, transparent 21%),
+        linear-gradient(180deg, rgba(29, 78, 216, 0.08) 0%, transparent 100%);
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+      mix-blend-mode: screen;
+      filter: blur(20px);
+      animation: drift-rays 32s ease-in-out infinite alternate;
+    }
+    @keyframes drift-rays {
+      0% { transform: scaleX(1) translateX(-3%); }
+      100% { transform: scaleX(1.2) translateX(3%); }
+    }
+
+    .cursor-blink{display:inline-block;width:3px;height:.85em;background:#3b82f6;margin-left:4px;vertical-align:text-bottom;animation:cblink .55s steps(2) infinite}
+    @keyframes cblink{0%{opacity:1}100%{opacity:0}}
+
+    /* Spark breathing */
+    #spark{
+      width:7px;height:7px;border-radius:50%;
+      background:radial-gradient(circle,#fff 0%,rgba(59,130,246,.7) 50%,transparent 85%);
+      box-shadow:0 0 5px 1px rgba(255,255,255,.6),0 0 14px 3px rgba(59,130,246,.45),0 0 32px 7px rgba(59,130,246,.18),0 0 55px 12px rgba(59,130,246,.05);
+      animation:spark-breathe 2.6s ease-in-out infinite;
+    }
+    @keyframes spark-breathe{
+      0%,100%{transform:scale(1);opacity:.55;
+        box-shadow:0 0 5px 1px rgba(255,255,255,.5),0 0 14px 3px rgba(59,130,246,.35),0 0 28px 6px rgba(59,130,246,.12)}
+      50%{transform:scale(1.5);opacity:1;
+        box-shadow:0 0 7px 2px rgba(255,255,255,.85),0 0 20px 5px rgba(59,130,246,.55),0 0 42px 10px rgba(59,130,246,.22),0 0 65px 16px rgba(59,130,246,.06)}
+    }
+
+    .ts{font-size:clamp(1.9rem,6vw,5rem)}
+    .tp{font-size:clamp(2.8rem,10vw,8rem)}
+    .tl{font-size:clamp(2rem,7vw,5.5rem)}
+    .ty{font-size:clamp(1rem,2.8vw,1.8rem)}
+    .tf{font-size:clamp(1.5rem,5vw,3.6rem)}
+  </style>
+</head>
+
+<body class="font-grotesk text-slate-100 antialiased select-none">
+
+  <!-- Layer 2: WebGL 3D Environment (Three.js undulating mesh) -->
+  <canvas id="webgl-bg" class="fixed inset-0 pointer-events-none z-[1]"></canvas>
+
+  <!-- Volumetric God Rays -->
+  <div class="god-rays"></div>
+
+  <!-- Ghost HUD (Telemetry) -->
+  <div class="fixed top-4 left-6 z-40 font-mono text-[9px] text-white/[0.07] tracking-widest leading-relaxed pointer-events-none select-none uppercase">
+    <div>SYS_STATUS: ACTIVE</div>
+    <div>SEC_LOC: <span id="hud-sec">0x7F4A2</span></div>
+    <div>GRID_COORD: <span id="hud-coord">42.109, -71.058</span></div>
+  </div>
+  <div class="fixed top-4 right-6 z-40 font-mono text-[9px] text-white/[0.07] tracking-widest leading-relaxed pointer-events-none select-none uppercase text-right">
+    <div>TIME_ELAPSED: <span id="hud-time">00:00:00.00</span></div>
+    <div>STABILITY: <span id="hud-stab">99.8%</span></div>
+  </div>
+
+  <!-- Layer 3: Interactive Spotlight -->
+  <div class="spotlight"></div>
+
+  <!-- Layer 5: 3D Tunnel canvas (strictly behind text) -->
+  <canvas id="tunnel"></canvas>
+
+  <!-- Overlays -->
+  <div class="tcore fixed inset-0 z-[5] pointer-events-none"></div>
+  <div class="vig fixed inset-0 z-[4] pointer-events-none"></div>
+
+  <!-- Layer 4: Cinematic Texture Overlay -->
+  <div class="texture-overlay"></div>
+
+  <!-- ═══ SCENE 0: The Spark ═══ -->
+  <div id="s0" class="fixed inset-0 z-50 flex items-center justify-center" style="cursor:default">
+    <div id="spark"></div>
+  </div>
+
+  <!-- ═══ PRELOADER: Scenes 1–6 ═══ -->
+  <div id="pre" class="fixed inset-0 z-10 overflow-hidden">
+    <div id="s1" class="absolute inset-0 flex items-center justify-center opacity-0">
+      <h2 class="ts font-syncopate font-bold uppercase tracking-[.12em] text-center glow-s">36 Hours</h2>
+    </div>
+    <div id="s2" class="absolute inset-0 flex items-center justify-center opacity-0">
+      <h2 class="ts font-syncopate font-bold uppercase tracking-[.12em] text-center glow-s">Endless Innovation</h2>
+    </div>
+    <div id="s3" class="absolute inset-0 flex items-center justify-center opacity-0">
+      <h2 class="ts font-syncopate font-bold uppercase tracking-[.12em] text-center glow-s">One Global Stage</h2>
+    </div>
+    <div id="s4" class="absolute inset-0 flex flex-col items-center justify-center opacity-0">
+      <p class="text-white/45 text-[clamp(.8rem,2vw,1.25rem)] tracking-[.35em] uppercase mb-2 font-grotesk font-light text-center">Prize Pool</p>
+      <p id="ctr" class="tp font-syncopate font-bold tracking-wider glow-h text-center" style="will-change:filter">₹0</p>
+    </div>
+    <div id="s5" class="absolute inset-0 flex flex-col items-center justify-center opacity-0">
+      <div id="ltxt" class="tl font-syncopate font-bold tracking-[.08em] glow-m whitespace-nowrap text-center"></div>
+      <div id="lyr" class="ty font-grotesk font-light tracking-[.3em] text-white/45 mt-2 opacity-0 text-center">'26</div>
+    </div>
+    <div id="s6" class="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-0">
+      <!-- MUJ Logo in the top left corner -->
+      <img id="muj-logo" src="WhatsApp_Image_2026-06-15_at_21.53.53-removebg-preview.png" alt="MUJ Logo" class="absolute top-8 left-8 md:top-12 md:left-12 w-40 md:w-56 opacity-0 invert object-contain pointer-events-none" />
+      
+      <h1 id="fl" class="tf font-syncopate font-bold tracking-[.08em] glow-m opacity-0 text-center">&lt; HYPNEXIS &gt; '26</h1>
+      <p id="fs" class="text-white/45 text-[clamp(.85rem,2vw,1.3rem)] tracking-[.4em] uppercase font-grotesk font-semibold opacity-0 text-center">Coming Soon</p>
+      <div id="ft" class="flex gap-2 sm:gap-3 text-blue-400 text-[clamp(.65rem,1.4vw,.95rem)] tracking-[.2em] uppercase font-grotesk font-medium mt-1 text-center justify-center">
+        <span class="opacity-0">Innovate.</span>
+        <span class="opacity-0">Collaborate.</span>
+        <span class="opacity-0">Elevate.</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   §0  WEBGL 3D ENVIRONMENT (Three.js undulating wireframe)
+   ══════════════════════════════════════════════════════ */
+;(function(){
+  const canvas = document.getElementById('webgl-bg');
+  if(!canvas) return;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Topographic plane geometry
+  const geometry = new THREE.PlaneGeometry(70, 70, 60, 60);
+
+  // Wireframe material with deep blue glow
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x1e3a8a,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.22
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.rotation.x = -Math.PI / 2.2;
+  mesh.position.y = -12;
+  mesh.position.z = -12;
+  scene.add(mesh);
+
+  camera.position.z = 25;
+
+  let targetX = 0, targetY = 0;
+  window.addEventListener('mousemove', (e) => {
+    targetX = (e.clientX - window.innerWidth / 2) * 0.0003;
+    targetY = (e.clientY - window.innerHeight / 2) * 0.0003;
+  });
+
+  const pos = geometry.attributes.position;
+  
+  function animate() {
+    requestAnimationFrame(animate);
+    const time = performance.now() * 0.00055;
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      // Continuous topographic wireframe undulation
+      const z = Math.sin(x * 0.12 + time) * Math.cos(y * 0.12 + time) * 2.2 +
+                Math.sin(x * 0.05 - time * 0.6) * 2.5 +
+                Math.cos(y * 0.08 + time * 0.35) * 1.4;
+      pos.setZ(i, z);
+    }
+    pos.needsUpdate = true;
+
+    // Smooth mouse parallax tilting
+    mesh.rotation.y += (targetX - mesh.rotation.y) * 0.05;
+    mesh.rotation.x += ((-Math.PI / 2.2 + targetY) - mesh.rotation.x) * 0.05;
+
+    renderer.render(scene, camera);
+  }
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  animate();
+})();
+
+
+/* ══════════════════════════════════════════════════════
+   §1  3D TUNNEL STARFIELD
+   ══════════════════════════════════════════════════════ */
+;(function(){
+  const c=document.getElementById('tunnel'),x=c.getContext('2d');
+  let W,H;
+  function resize(){W=c.width=innerWidth;H=c.height=innerHeight}
+  addEventListener('resize',resize);resize();
+
+  const N=Math.min(200,Math.round(W*H/10000)),FOV=600,MZ=2000;
+  const cfg={speed:1.8};window.__p=cfg;
+
+  class S{
+    constructor(i){this.reset(i)}
+    reset(i){
+      this.x=(Math.random()-.5)*W*1.6;
+      this.y=(Math.random()-.5)*H*1.6;
+      this.z=i?Math.random()*MZ+100:MZ+Math.random()*500;
+      this.pz=this.z;this.h=210+Math.random()*28;
+    }
+    update(s){this.pz=this.z;this.z-=s;if(this.z<=1)this.reset(false)}
+    draw(){
+      const cx=W/2,cy=H/2,s=FOV/this.z,sx=this.x*s+cx,sy=this.y*s+cy;
+      if(sx<-60||sx>W+60||sy<-60||sy>H+60)return;
+      const ps=FOV/this.pz,px=this.x*ps+cx,py=this.y*ps+cy;
+      const l=1-this.z/MZ,a=Math.min(.65,l*.75),r=Math.max(.2,1.6*s);
+      if(a<.03)return;
+      x.beginPath();x.moveTo(px,py);x.lineTo(sx,sy);
+      x.strokeStyle=`hsla(${this.h},70%,65%,${a*.35})`;x.lineWidth=Math.max(.3,r*.55);x.stroke();
+      x.beginPath();x.arc(sx,sy,r*2.8,0,6.283);
+      x.fillStyle=`hsla(${this.h},80%,60%,${a*.07})`;x.fill();
+      x.beginPath();x.arc(sx,sy,r,0,6.283);
+      x.fillStyle=`hsla(${this.h},55%,82%,${a})`;x.fill();
+    }
+  }
+
+  // Digital Ash: Reverse Gravity Sparks drifting down
+  class Ash {
+    constructor() { this.reset() }
+    reset() {
+      this.x = Math.random() * W;
+      this.y = -10 - Math.random() * 20;
+      this.vy = 0.4 + Math.random() * 0.8;
+      this.vx = (Math.random() - 0.5) * 0.25;
+      this.size = 0.8 + Math.random() * 1.4;
+      this.maxLife = 140 + Math.random() * 160;
+      this.life = this.maxLife;
+      this.h = 195 + Math.random() * 25;
+    }
+    update() {
+      this.y += this.vy;
+      this.x += this.vx;
+      this.life--;
+      if (this.life <= 0 || this.y > H * 0.65) this.reset();
+    }
+    draw() {
+      const alpha = (this.life / this.maxLife) * 0.3 * (1 - (this.y / (H * 0.65)));
+      if (alpha <= 0) return;
+      x.beginPath();
+      x.arc(this.x, this.y, this.size, 0, 6.283);
+      x.fillStyle = `hsla(${this.h}, 85%, 75%, ${alpha})`;
+      x.fill();
+    }
+  }
+
+  const st=Array.from({length:N},()=>new S(true));
+  const ashes=Array.from({length:40},()=>new Ash());
+
+  ;(function loop(){
+    x.clearRect(0,0,W,H);
+    const sp=cfg.speed;
+    for(let i=0;i<st.length;i++){st[i].update(sp);st[i].draw()}
+    for(let i=0;i<ashes.length;i++){ashes[i].update();ashes[i].draw()}
+    requestAnimationFrame(loop);
+  })();
+})();
+
+
+/* ══════════════════════════════════════════════════════
+   §2  AUDIO ENGINE  (Web Audio — cinematic synthesis)
+   ══════════════════════════════════════════════════════ */
+class AE{
+  constructor(){
+    const AC=window.AudioContext||window.webkitAudioContext;
+    this.x=new AC();
+    const cp=this.x.createDynamicsCompressor();
+    cp.threshold.value=-16;cp.knee.value=8;cp.ratio.value=5;cp.attack.value=.003;cp.release.value=.12;
+    cp.connect(this.x.destination);
+    this.m=this.x.createGain();this.m.gain.value=.32;this.m.connect(cp);
+    this.rv=this._mkR(4,1.8);this.rvG=this.x.createGain();this.rvG.gain.value=.4;
+    this.rv.connect(this.rvG);this.rvG.connect(this.m);
+    this._nb=this._mkN(3);
+  }
+  _mkN(d){const l=this.x.sampleRate*d,b=this.x.createBuffer(1,l,this.x.sampleRate),a=b.getChannelData(0);for(let i=0;i<l;i++)a[i]=Math.random()*2-1;return b}
+  _mkR(d,dc){const l=this.x.sampleRate*d,b=this.x.createBuffer(2,l,this.x.sampleRate);for(let c=0;c<2;c++){const a=b.getChannelData(c);for(let i=0;i<l;i++)a[i]=(Math.random()*2-1)*Math.pow(1-i/l,dc)}const v=this.x.createConvolver();v.buffer=b;return v}
+
+  _o(type,freq,dur,vol,atk=.1,rel=.3,rv=0){
+    const t=this.x.currentTime,o=this.x.createOscillator(),g=this.x.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+atk);
+    if(dur-rel>atk)g.gain.setValueAtTime(vol,t+dur-rel);
+    g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g);g.connect(this.m);
+    if(rv>0){const r=this.x.createGain();r.gain.value=rv;g.connect(r);r.connect(this.rv)}
+    o.start(t);o.stop(t+dur+.2);return o;
+  }
+  _n(dur,vol,freq=2e3,q=1,rv=0){
+    const t=this.x.currentTime,s=this.x.createBufferSource();s.buffer=this._nb;
+    const f=this.x.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=q;
+    const g=this.x.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+    s.connect(f);f.connect(g);g.connect(this.m);
+    if(rv>0){const r=this.x.createGain();r.gain.value=rv;g.connect(r);r.connect(this.rv)}
+    s.start(t);s.stop(t+dur+.1);
+  }
+  _sw(dur,vol,f1,f2,type='bandpass',q=.8,rv=0){
+    const t=this.x.currentTime,s=this.x.createBufferSource();s.buffer=this._nb;
+    const f=this.x.createBiquadFilter();f.type=type;f.Q.value=q;
+    f.frequency.setValueAtTime(f1,t);f.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    const g=this.x.createGain();g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+dur*.3);g.gain.linearRampToValueAtTime(0,t+dur);
+    s.connect(f);f.connect(g);g.connect(this.m);
+    if(rv>0){const r=this.x.createGain();r.gain.value=rv;g.connect(r);r.connect(this.rv)}
+    s.start(t);s.stop(t+dur+.1);
+  }
+
+  /* Scene 0: violent reverse-vacuum implosion */
+  vacuum(){
+    const t=this.x.currentTime;
+    const s=this.x.createBufferSource();s.buffer=this._nb;
+    const f=this.x.createBiquadFilter();f.type='bandpass';f.Q.value=6;
+    f.frequency.setValueAtTime(12000,t);f.frequency.exponentialRampToValueAtTime(15,t+.3);
+    const g=this.x.createGain();g.gain.setValueAtTime(.55,t);
+    g.gain.setValueAtTime(.55,t+.18);g.gain.linearRampToValueAtTime(0,t+.32);
+    s.connect(f);f.connect(g);g.connect(this.m);s.start(t);s.stop(t+.35);
+    this._o('sine',25,.3,.5,.002,.25);
+    const w=this.x.createOscillator();w.type='sine';
+    w.frequency.setValueAtTime(5000,t);w.frequency.exponentialRampToValueAtTime(18,t+.28);
+    const wg=this.x.createGain();wg.gain.setValueAtTime(.07,t);wg.gain.exponentialRampToValueAtTime(.001,t+.3);
+    w.connect(wg);wg.connect(this.m);w.start(t);w.stop(t+.32);
+  }
+
+  /* Scene 1: massive sub-bass drone */
+  s1(){
+    this._o('sine',22,5.5,.50,2,1.8);
+    this._o('sine',44,5.5,.40,1.8,1.8);
+    this._o('sine',66,5,.18,1.5,1.5);
+    this._sw(4,.05,80,2000,'bandpass',.6);
+  }
+  /* Scene 2: heartbeat thud + swell */
+  s2(){
+    this._o('sine',38,1.2,.50,.005,1);this._n(.08,.30,800,2,.3);
+    setTimeout(()=>{this._o('sine',38,1,.30,.005,.8);this._n(.06,.18,900,2,.2)},350);
+    this._o('triangle',165,3.8,.05,1.5,1.2,.4);
+    this._o('triangle',220,3.8,.04,1.8,1.2,.3);
+  }
+  /* Scene 3: synth blast + vacuum wind */
+  s3(){
+    this._o('sawtooth',80,1.5,.18,.005,1.2,.3);
+    this._o('square',80,1.2,.10,.005,1,.2);
+    this._o('sine',40,2.5,.35,.005,2);
+    this._n(.15,.25,1500,3,.5);
+    setTimeout(()=>this._sw(2,.12,5000,80,'bandpass',1.5,.4),1500);
+  }
+  /* Scene 4: thunderous boom */
+  s4o(){
+    this._o('sine',22,3,.60,.003,2.5);this._o('sine',44,2.5,.50,.003,2);
+    this._o('sine',88,2,.25,.003,1.5);this._n(.25,.45,600,2,.4);this._n(.12,.25,3000,6,.3);
+  }
+  tick(){this._n(.015,.18,7000,4)}
+  /* Scene 4: metallic slam on lock */
+  s4l(){
+    this._o('sine',28,4,.70,.002,3.5,.4);this._o('sine',55,3,.45,.002,2.5,.3);
+    this._n(.3,.50,2500,8,.6);this._n(.15,.30,800,3,.4);
+  }
+  /* Scene 5: tension hum + rising build */
+  s5s(){
+    const t=this.x.currentTime;
+    const o=this.x.createOscillator();o.type='sine';o.frequency.value=40;
+    const lfo=this.x.createOscillator();lfo.type='sine';lfo.frequency.value=4;
+    const lg=this.x.createGain();lg.gain.value=8;lfo.connect(lg);lg.connect(o.frequency);
+    const g=this.x.createGain();g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(.20,t+2);g.gain.setValueAtTime(.20,t+10);
+    g.gain.linearRampToValueAtTime(0,t+13);
+    o.connect(g);g.connect(this.m);o.start(t);o.stop(t+13.5);lfo.start(t);lfo.stop(t+13.5);
+    const o1=this.x.createOscillator(),o2=this.x.createOscillator();
+    o1.type='sawtooth';o2.type='sawtooth';
+    o1.frequency.setValueAtTime(55,t);o1.frequency.linearRampToValueAtTime(180,t+11);
+    o2.frequency.setValueAtTime(57,t);o2.frequency.linearRampToValueAtTime(183,t+11);
+    const sf=this.x.createBiquadFilter();sf.type='lowpass';
+    sf.frequency.setValueAtTime(100,t);sf.frequency.linearRampToValueAtTime(1400,t+11);
+    const sg=this.x.createGain();sg.gain.setValueAtTime(0,t);
+    sg.gain.linearRampToValueAtTime(.05,t+3);sg.gain.linearRampToValueAtTime(.08,t+9);
+    sg.gain.linearRampToValueAtTime(0,t+12);
+    o1.connect(sf);o2.connect(sf);sf.connect(sg);sg.connect(this.m);
+    const rv=this.x.createGain();rv.gain.value=.25;sg.connect(rv);rv.connect(this.rv);
+    o1.start(t);o1.stop(t+12.5);o2.start(t);o2.stop(t+12.5);
+  }
+  clack(w=1){this._o('sine',1200/w,.08,.12*w,.002,.07);this._n(.04,.10*w,3500,6*w)}
+  /* Scene 5: bass drop climax */
+  s5d(){
+    this._o('sine',25,5,.80,.002,4.5,.5);this._o('sine',50,4,.55,.002,3.5,.4);
+    this._o('sine',100,3,.25,.002,2.5,.3);this._n(.35,.45,1200,3,.6);this._n(.18,.30,3500,8,.4);
+  }
+  /* Scene 6: haunting Am pad (infinite hold) */
+  s6(){
+    const t=this.x.currentTime;
+    const pad=this.x.createGain();pad.gain.setValueAtTime(0,t);pad.gain.linearRampToValueAtTime(.028,t+5);
+    const lfo=this.x.createOscillator();lfo.type='sine';lfo.frequency.value=.12;
+    const lg=this.x.createGain();lg.gain.value=.006;lfo.connect(lg);lg.connect(pad.gain);
+    lfo.start(t);lfo.stop(t+300);
+    [[110,'sine'],[111,'triangle'],[131,'sine'],[132,'triangle'],
+     [165,'triangle'],[166.5,'sine'],[220,'sine'],[221,'triangle']].forEach(([f,tp])=>{
+      const o=this.x.createOscillator();o.type=tp;o.frequency.value=f;
+      const fl=this.x.createBiquadFilter();fl.type='lowpass';fl.frequency.value=500;
+      o.connect(fl);fl.connect(pad);o.start(t);o.stop(t+300);
+    });
+    pad.connect(this.m);
+    const rv=this.x.createGain();rv.gain.value=.6;pad.connect(rv);rv.connect(this.rv);
+  }
+  /* Cinematic riser (bridges scenes) */
+  riser(dur=1.8,vol=.15){
+    const t=this.x.currentTime;
+    const o=this.x.createOscillator();o.type='sawtooth';
+    o.frequency.setValueAtTime(45,t);o.frequency.exponentialRampToValueAtTime(900,t+dur);
+    const f=this.x.createBiquadFilter();f.type='lowpass';f.Q.value=3;
+    f.frequency.setValueAtTime(60,t);f.frequency.exponentialRampToValueAtTime(7000,t+dur);
+    const g=this.x.createGain();g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+dur*.88);g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(f);f.connect(g);g.connect(this.m);
+    const rv=this.x.createGain();rv.gain.value=.3;g.connect(rv);rv.connect(this.rv);
+    o.start(t);o.stop(t+dur+.2);
+    this._sw(dur,vol*.45,150,6000,'highpass',1,.2);
+  }
+  resume(){return this.x.state==='suspended'?this.x.resume():Promise.resolve()}
+}
+
+
+/* ══════════════════════════════════════════════════════
+   §3  SCENE 0 — SPARK IMPLOSION + MAIN TIMELINE
+   ══════════════════════════════════════════════════════ */
+;(function(){
+  let audio=null;
+  let cur=0;
+  const pCfg=window.__p;
+  const spark=document.getElementById('spark');
+  const s0=document.getElementById('s0');
+
+  // Interactive Mouse Spotlight
+  document.addEventListener('mousemove', (e) => {
+    const x = (e.clientX / window.innerWidth) * 100;
+    const y = (e.clientY / window.innerHeight) * 100;
+    document.documentElement.style.setProperty('--mx', `${x}%`);
+    document.documentElement.style.setProperty('--my', `${y}%`);
+  });
+
+  // Ghost HUD Telemetry logic
+  const hudSec = document.getElementById('hud-sec');
+  const hudCoord = document.getElementById('hud-coord');
+  const hudTime = document.getElementById('hud-time');
+  const hudStab = document.getElementById('hud-stab');
+  const startTime = performance.now();
+
+  setInterval(() => {
+    if (hudSec) hudSec.textContent = '0x' + Math.floor(Math.random() * 0xFFFFF).toString(16).toUpperCase();
+    if (hudCoord) hudCoord.textContent = (42.109 + (Math.random() - 0.5) * 0.005).toFixed(4) + ', ' + (-71.058 + (Math.random() - 0.5) * 0.005).toFixed(4);
+    if (hudStab) hudStab.textContent = (99.5 + Math.random() * 0.49).toFixed(2) + '%';
+  }, 400);
+
+  function updateTimer() {
+    const elapsed = performance.now() - startTime;
+    const m = Math.floor(elapsed / 60000).toString().padStart(2, '0');
+    const s = Math.floor((elapsed % 60000) / 1000).toString().padStart(2, '0');
+    const ms = Math.floor((elapsed % 1000) / 10).toString().padStart(2, '0');
+    if (hudTime) hudTime.textContent = `${m}:${s}.${ms}`;
+    requestAnimationFrame(updateTimer);
+  }
+  requestAnimationFrame(updateTimer);
+
+  function snd(n){
+    if(!audio)return;
+    ({1:()=>audio.s1(),2:()=>audio.s2(),3:()=>audio.s3(),
+      4:()=>audio.s4o(),5:()=>audio.s5s(),6:()=>audio.s6()})[n]?.();
+  }
+
+  // ULTRA SMOOTH EASING: power4.inOut
+  const cinematicEaseIn = "power4.out";
+  const cinematicEaseOut = "power4.inOut";
+
+  const tl=gsap.timeline({defaults:{ease: cinematicEaseIn},paused:true});
+
+  function addScene(id,hold,riserVol){
+    const n=+id[1];
+    tl.add(()=>{cur=n;snd(n)})
+      .fromTo(`#${id}`,{opacity:0, scale:0.92, filter:'blur(8px)'},{opacity:1, scale:1, filter:'blur(0px)', duration:1.2, ease: cinematicEaseIn})
+      .to(`#${id}`,{opacity:0, scale:1.18, filter:'blur(8px)', duration:0.9, delay:hold, ease: cinematicEaseOut,
+        onStart:()=>{
+          if(audio&&riserVol>0)audio.riser(1.6,riserVol);
+          gsap.to(pCfg,{speed:6,duration:0.9,ease:'power2.in'});
+        },
+        onComplete:()=>gsap.to(pCfg,{speed:1.8,duration:0.5,ease:'power2.out'})
+      });
+  }
+
+  // ─── Scene 1: The Drop ─────────────────────────
+  tl.to('#tunnel',{opacity:1,duration:1.5, ease: 'power2.inOut'})
+    .add(()=>{cur=1;snd(1)},'-=1.2');
+  tl.fromTo('#s1',{opacity:0, scale:0.92, filter:'blur(8px)'},{opacity:1, scale:1, filter:'blur(0px)', duration:1.2, ease: cinematicEaseIn},'-=0.8')
+    .to('#s1',{opacity:0, scale:1.18, filter:'blur(8px)', duration:0.9, delay:1.5, ease: cinematicEaseOut,
+      onStart:()=>{if(audio)audio.riser(1.6,.10);gsap.to(pCfg,{speed:6,duration:0.9,ease:'power2.in'})},
+      onComplete:()=>gsap.to(pCfg,{speed:1.8,duration:0.5,ease:'power2.out'})
+    });
+
+  // ─── Scene 2: The Drive ────────────────────────
+  addScene('s2',1.5,.18);
+
+  // ─── Scene 3: The Scale ────────────────────────
+  addScene('s3',1.5,.28);
+
+  // ─── Scene 4: The Stakes ───────────────────────
+  tl.add(()=>{cur=4;snd(4)})
+    .to(pCfg,{speed:1.8,duration:0.3})
+    .fromTo('#s4',{opacity:0, scale:0.92, filter:'blur(8px)'},{opacity:1, scale:1, filter:'blur(0px)', duration:1.1, ease: cinematicEaseIn})
+    .addPause('>',()=>{
+      runCounter(()=>setTimeout(()=>tl.resume(),2200));
+    })
+    .to('#s4',{opacity:0, scale:1.18, filter:'blur(8px)', duration:0.9, ease: cinematicEaseOut,
+      onStart:()=>gsap.to(pCfg,{speed:5,duration:0.7, ease:'power2.in'}),
+      onComplete:()=>gsap.to(pCfg,{speed:1.2,duration:0.6, ease:'power2.out'})
+    });
+
+  // ─── Scene 5: Logo Climax ──────────────────────
+  tl.add(()=>{cur=5;snd(5)})
+    .fromTo('#s5',{opacity:0, scale:0.95, filter:'blur(4px)'},{opacity:1, scale:1, filter:'blur(0px)', duration:1.0, ease: 'power2.inOut'})
+    .addPause('>',()=>{
+      runTypewriter(()=>{
+        gsap.to('#lyr',{opacity:1,duration:0.8,delay:0.5, ease: 'power2.out'});
+        gsap.to('#ltxt',{scale:1.08,duration:8.5,ease:'power1.inOut'});
+        setTimeout(()=>tl.resume(),8000);
+      });
+    })
+    .to('#s5',{opacity:0, scale:1.2, filter:'blur(8px)', duration:1.2, ease: cinematicEaseOut});
+
+  // ─── Scene 6: The Aftermath ────────────────────
+  tl.add(()=>{cur=6;snd(6)})
+    .to(pCfg,{speed:0.6,duration:2.5,ease:'power2.out'})
+    .to('#s6',{opacity:1,duration:0.8, ease: 'power2.inOut'})
+    .fromTo('#fl',{opacity:0, scale:0.9, filter:'blur(5px)'},{opacity:0.7, scale:1, filter:'blur(0px)', duration:1.2, ease: cinematicEaseIn})
+    .fromTo('#fs',{opacity:0},{opacity:1,duration:1.0, ease: 'power2.inOut'},'-=0.2')
+    .add(()=>{
+      gsap.fromTo('#ft span',{opacity:0,y:12},{opacity:1,y:0,duration:0.8,stagger:0.5,ease:'power3.out'});
+      gsap.fromTo('#muj-logo',{opacity:0, x:-20, filter:'blur(4px)'},{opacity:1, x:0, filter:'blur(0px)', duration:1.5, delay:1.2, ease:'power3.out'});
+    },'+=0.8');
+
+
+  /* ═══════════════════════════════════════════════════
+     SCENE 0 CLICK HANDLER — The Implosion
+     ═══════════════════════════════════════════════════ */
+  s0.addEventListener('click',function trigger(){
+    s0.removeEventListener('click',trigger);
+    s0.style.cursor='default';
+
+    try{
+      audio=new AE();
+      audio.resume().then(()=>audio.vacuum());
+    }catch(e){console.warn('Audio failed:',e);audio=null}
+
+    spark.style.animation='none';
+
+    gsap.to(spark,{
+      scale:0.04,
+      duration:0.35,
+      ease:'power4.in',
+      onUpdate:function(){
+        const p=this.progress();
+        const g=15+p*90,sp=4+p*35;
+        spark.style.boxShadow=
+          `0 0 ${g}px ${sp}px rgba(255,255,255,${0.4+p*0.6}),`+
+          `0 0 ${g*1.8}px ${sp*1.8}px rgba(59,130,246,${0.2+p*0.5}),`+
+          `0 0 ${g*3}px ${sp*3}px rgba(59,130,246,${0.05+p*0.15})`;
+      },
+      onComplete(){
+        spark.style.opacity='0';
+        setTimeout(()=>{
+          gsap.to(s0,{opacity:0,duration:0.4, ease:'power2.inOut',
+            onComplete:()=>{s0.style.display='none'}
+          });
+          tl.play();
+        },200);
+      }
+    });
+  });
+
+
+  /* ═══════════════════════════════════════════════════
+     Prize Counter — GSAP-driven for frame-perfect sync
+     The slam sound fires from onComplete: the EXACT
+     rendering frame the counter locks onto ₹7,00,000+.
+     Tick sounds fire from onUpdate on the same tween.
+     One animation owns the entire lifecycle — zero drift.
+     ═══════════════════════════════════════════════════ */
+  function runCounter(cb){
+    const el=document.getElementById('ctr');
+    const proxy={val:0};
+    let lastTickT=0;
+
+    function fmt(n){
+      const s=Math.floor(n).toString();
+      if(s.length<=3)return'₹'+s;
+      const l=s.slice(-3);let r=s.slice(0,-3);const p=[];
+      while(r.length>2){p.unshift(r.slice(-2));r=r.slice(0,-2)}
+      if(r.length)p.unshift(r);return'₹'+p.join(',')+','+l;
+    }
+
+    gsap.to(proxy,{
+      val:600000,
+      duration:1.6,
+      ease:'power4.out',
+      onUpdate:function(){
+        const p=this.progress();
+        // Visual: format counter + motion blur
+        el.textContent=fmt(proxy.val);
+        el.style.filter=`blur(${(1-p)*2.5}px)`;
+        // Audio: geiger ticks throttled to ~40ms via GSAP's own clock
+        const now=performance.now();
+        if(audio&&now-lastTickT>40){
+          audio.tick();
+          lastTickT=now;
+        }
+      },
+      onComplete:function(){
+        // ─── CRITICAL SYNC POINT ───
+        // This callback fires at the EXACT frame GSAP
+        // considers the value to have reached 600000.
+        // Visual lock + audio slam = same rendering frame.
+        el.textContent=fmt(600000)+'+';
+        el.style.filter='blur(0)';
+        if(audio)audio.s4l();
+        // Glow flash on lock
+        gsap.fromTo(el,
+          {textShadow:'0 0 100px rgba(59,130,246,.9),0 0 200px rgba(59,130,246,.4)'},
+          {textShadow:'0 0 60px rgba(59,130,246,.35),0 0 120px rgba(59,130,246,.18)',
+           duration:1.2,ease:'power3.out'});
+        cb();
+      }
+    });
+  }
+
+
+  /* ═══════════════════════════════════════════════════
+     Typewriter with Glitch Reveal
+     ═══════════════════════════════════════════════════ */
+  function runTypewriter(cb){
+    const el=document.getElementById('ltxt');
+    const full='< HYPNEXIS >';
+    const stages=[
+      {end:5,pause:600,clack:1},     // "< HYP"
+      {end:7,pause:600,clack:1.6},   // "< HYPNE"
+      {end:12,pause:0,clack:0},      // "< HYPNEXIS >"
+    ];
+    const gl='!@#$%&*<>{}[]01/\\|~^';
+    let built='',si=0;
+
+    const cur=document.createElement('span');
+    cur.className='cursor-blink';el.appendChild(cur);
+
+    function render(str){
+      el.textContent='';
+      for(const ch of str){const s=document.createElement('span');s.textContent=ch;s.style.display='inline-block';el.appendChild(s)}
+      el.appendChild(cur);
+    }
+    function next(){
+      if(si>=stages.length){
+        if(audio)audio.s5d();
+        gsap.to(pCfg,{speed:8.5,duration:0.5,ease:'power3.in',
+          onComplete:()=>gsap.to(pCfg,{speed:1.4,duration:2.5,ease:'power3.out'})});
+        setTimeout(()=>gsap.to(cur,{opacity:0,duration:0.6}),900);
+        cb();return;
+      }
+      const stg=stages[si],target=full.slice(0,stg.end);
+      let ci=built.length;
+      if(audio&&stg.clack>0)audio.clack(stg.clack);
+
+      function typeN(){
+        if(ci>=target.length){built=target;si++;
+          if(stg.pause>0&&si<stages.length)setTimeout(next,stg.pause);else next();return}
+        const real=full[ci];let sw=3;
+        render(built+gl[Math.random()*gl.length|0]);
+        const sp=el.querySelectorAll('span:not(.cursor-blink)');
+        if(sp.length)sp[sp.length-1].style.opacity='0.4';
+        function g(){
+          if(sw--<=0){built+=real;render(built);ci++;setTimeout(typeN,40+Math.random()*30);return}
+          render(built+gl[Math.random()*gl.length|0]);
+          const s=el.querySelectorAll('span:not(.cursor-blink)');
+          if(s.length)s[s.length-1].style.opacity='0.4';
+          setTimeout(g,32);
+        }
+        setTimeout(g,38);
+      }
+      typeN();
+    }
+    next();
+  }
+})();
+</script>
+</body>
+</html>
